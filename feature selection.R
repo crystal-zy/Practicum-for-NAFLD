@@ -53,25 +53,38 @@ perflistcreator = function(model_list = fitlist){
     org_var=lapply(inputlist, function(x) {
       a=strsplit(x, symbol);
       ifelse(length(a[[1]])>1, paste0(naturalsort::naturalsort(a[[1]]),collapse = symbol), a[[1]])})
-      unlist(org_var)
-      return(unlist(org_var))
+    unlist(org_var)
+    return(unlist(org_var))
   } 
   tres = t(res[,-1])
-  colnames(tres)=var_organise(inputlist = res[,1], symbol = ":")
-  ## OUTCOME: c("a.a_b", "a.a_c", "a.a_b")
-  tres = data.frame(tres)
-  # remove the ".1" so the column become duplicated
-  names(tres)<-gsub(".1", "", names(tres), fixed = TRUE)
-  # get the dataframe of not duplicated
-  nondups <- tres[,!duplicated(colnames(tres))]
-  # get the dataframe of duplicated
-  dups <- tres[,duplicated(colnames(tres))]
-  name <- intersect(colnames(nondups), colnames(dups))
-  for (i in 1:length(name)){
-    nondups[,name[i]]<-ifelse(nondups[,name[i]] == 1 | dups[,name[i]] == 1, 1, 0)
-  }
-  res = nondups
-  return(res)
+  #   colnames(tres)=var_organise(inputlist = res[,1], symbol = ":")
+  #   ## OUTCOME: c("a.a_b", "a.a_c", "a.a_b")
+  #   tres = data.frame(tres)
+  #   # remove the ".1" so the column become duplicated
+  #   names(tres)<-gsub(".1", "", names(tres), fixed = TRUE)
+  #   # get the dataframe of not duplicated
+  #   nondups <- tres[,!duplicated(colnames(tres))]
+  #   # get the dataframe of duplicated
+  #   dups <- tres[,duplicated(colnames(tres))]
+  #   name <- intersect(colnames(nondups), colnames(dups))
+  #   for (i in 1:length(name)){
+  #     nondups[,name[i]]<-ifelse(nondups[,name[i]] == 1 | dups[,name[i]] == 1, 1, 0)
+  #   }
+  #   res = nondups
+  #   return(res)
+  
+  ## FIX
+  tres = data.frame(tres)              
+  names(tres) = res[,1]
+  tres$boot = 1:nrow(tres)
+  df1 = reshape2::melt(data = tres, id.vars = "boot")
+  df1 = df1[complete.cases(df1),]
+  df1$variable = as.character(df1$variable)
+  # str(df1)
+  df1$variable = var_organise(inputlist = df1$variable, symbol = ":")
+  res = reshape2::dcast(df1,boot~variable, value.var = "value")
+  res$boot = NULL
+  return(res)             
 }
 
 # Perform Boot straps with LASSO contain interaction for NAFLD
@@ -185,8 +198,3 @@ freqdf2 = as.data.frame(t(freqdf2))
 freqdf2 = freqdf2 %>% mutate(freq=c(t(freq2)),feature=rownames(freqdf2))
 print(t(rbind(freqdf2$feature,freqdf2$freq)))
 print(freqdf2$feature[freqdf2$freq>0.7])
-
-
-
-
-
